@@ -8,7 +8,16 @@ exports.possibleNamesForRoute = {
     "husky-campus-night": "husky-campus-nightly",
     "husky-campus-during-night": "husky-campus-nightly",
     "campus-nightly": "husky-campus-nightly",
-    "campus-night": "husky-campus-nightly"
+    "campus-night": "husky-campus-nightly",
+    "city-commuter": "city-commuter",
+    "city": "city-commuter",
+    "daniel-heights": "daniel-heights",
+    "shopping-weekdays": "shopping-weekdays",
+    "shopping": "shopping-weekdays",
+    "shopping-saturday": "shopping-saturday"
+    // add more here where the left hand side is something someone could type in
+    // and the right hand side is one of the types from "BusRouteNames".
+    // make sure to make them lower case and use "-" instead of space so the parser can find them.
 };
 /**
  * Get the route names.
@@ -26,6 +35,7 @@ exports.getBusRouteNames = getBusRouteNames;
  * @param switcher2	which item
  */
 function getRouteInfo(route, switcher, switcher2) {
+    // @ts-ignore
     var items = Object.values(route); // get value of BusRoute
     if (switcher) // true is key
      {
@@ -83,6 +93,24 @@ function getBusRouteForInput(input) {
     return undefined;
 }
 exports.getBusRouteForInput = getBusRouteForInput;
+/**
+ * return if the route contains said stop
+ * @param route	BUsRoute
+ * @param stop	string name of stop
+ */
+function containStop(route, stop) {
+    var stops = getStopsFromBusRoute(route);
+    var i;
+    for (i = 0; i < stops.length; i++) {
+        console.log("stops[i]= " + stops[i].toLowerCase() + " stop= " + stop.toLowerCase());
+        if (stops[i].toLowerCase() === stop.toLowerCase()) {
+            console.log("true");
+            return true;
+        }
+    }
+    return false;
+}
+exports.containStop = containStop;
 exports.busRoutes = {
     "husky-campus-daily": {
         days: [1, 2, 3, 4, 5],

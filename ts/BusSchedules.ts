@@ -12,13 +12,21 @@ export type BusRoutes = { [key in BusRouteNames]: BusRoute; };
 
 export const possibleNamesForRoute: { [possibleInput: string]: BusRouteNames } = {
 	"husky-campus-day": "husky-campus-daily",
-	"husky-campus-during-day": "husky-campus-daily",
-	"campus-daily": "husky-campus-daily",
-	"campus-day": "husky-campus-daily",
-	"husky-campus-night": "husky-campus-nightly",
-	"husky-campus-during-night": "husky-campus-nightly",
-	"campus-nightly": "husky-campus-nightly",
-	"campus-night": "husky-campus-nightly",
+	"husky-campus-during-day":	"husky-campus-daily",
+	"campus-daily": 	"husky-campus-daily",
+	"campus-day": 		"husky-campus-daily",
+	"husky-campus-night": 		"husky-campus-nightly",
+	"husky-campus-during-night":"husky-campus-nightly",
+	"campus-nightly": 	"husky-campus-nightly",
+	"campus-night": 	"husky-campus-nightly",
+	"city-commuter":	"city-commuter",
+	"city":				"city-commuter",
+	"daniel-heights":	"daniel-heights",
+	"shopping-weekdays":"shopping-weekdays",
+	"shopping":			"shopping-weekdays",
+	"shopping-saturday":"shopping-saturday"
+
+
 
 	// add more here where the left hand side is something someone could type in
 	// and the right hand side is one of the types from "BusRouteNames".
@@ -125,8 +133,10 @@ export function containStop(route: BusRoute | undefined, stop: string):boolean
 
 	for(i=0;i<stops.length;i++)
 	{
-		if(stops[i]===stop)
+		// console.log("stops[i]= "+stops[i].toLowerCase()+ " stop= "+stop.toLowerCase());
+		if(stops[i].toLowerCase()===stop.toLowerCase())
 		{
+			// console.log("true");
 			return true;
 		}
 	}

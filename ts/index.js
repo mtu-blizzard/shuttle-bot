@@ -148,20 +148,154 @@ var FS = require("fs");
 // 	}
 // 	return output;
 // }
+function nameOfDay(input) {
+    switch (input) {
+        case 1: {
+            return "Monday";
+        }
+        case 2: {
+            return "Tuesday";
+        }
+        case 3: {
+            return "Wednesday";
+        }
+        case 4: {
+            return "Thursday";
+        }
+        case 5: {
+            return "Friday";
+        }
+        case 6: {
+            return "Saturday";
+        }
+        case 7: {
+            return "Sunday";
+        }
+        default: {
+            return "everyday";
+        }
+    }
+}
+function dontTrackThatRoute() {
+    return "Whoops! I don't track that route. I track the following routes: " +
+        BusSchedules_1.getBusRouteNames().join("--> ") + ".\n" + printHelp(false);
+}
+function routeExist(line) {
+    var route = BusSchedules_1.getBusRouteForInput(line); //get BusRoute associated with line
+    if (!route) {
+        return false; // no route
+    }
+    else
+        return true;
+}
 /**
  * return route of the line
  * @param line
  */
-function getStops(line) {
+function getStops(routeName) {
+    var route = BusSchedules_1.getBusRouteForInput(routeName); // get BusRoute associated with line
+    if (routeExist(routeName)) {
+        // @ts-ignore
+        return ("The route " + routeName + " goes through the following stops: \n" + BusSchedules_1.getStopsFromBusRoute(route).join("-->") + ".");
+    }
+    else
+        return dontTrackThatRoute();
+}
+/**
+ * array of BusRoute containing the specified stop
+ * @param stop
+ */
+function routesToStop(stop) {
+    var i;
+    var answer = [];
+    var routes = BusSchedules_1.getBusRouteNames(); // string of route names
+    for (i = 0; i < routes.length; i++) {
+        if (BusSchedules_1.containStop(BusSchedules_1.getBusRouteForInput(routes[i]), stop)) {
+            console.log("there are routes contain stop " + stop);
+            console.log(routes[i]);
+            // @ts-ignore
+            answer = answer.concat(routes[i]);
+        }
+    }
+    console.log("array of BusRoute for routeToStop:" + answer);
+    if (answer === [])
+        return undefined;
+    else
+        return answer;
+}
+/**
+ * checks to see which routes stop by the stop
+ * @param stop
+ */
+function routeFromStop(stop) {
+    var _a;
+    // let i: number;
+    // let answer:string =" ";
+    // let routes = getBusRouteNames();
+    // for(i=0;i<routes.length;i++)
+    // {
+    // 	if(containStop(getBusRouteForInput(routes[i]),stop))	// if route contains the stop
+    // 	{
+    // 		answer.concat(routes[i]+", ");
+    // 	}
+    // }
+    var answer;
+    answer = (_a = routesToStop(stop)) === null || _a === void 0 ? void 0 : _a.join(", ");
+    console.log("routeFromStop " + answer);
+    if (answer === undefined) // no match, undefined
+     {
+        return "No routes passes through stop " + stop + "\n" + printHelp(false);
+    }
+    else
+        return "The following route(s) pass through stop " + stop + ":\n" + answer;
+}
+/**
+ * return operation days in a week and time duration
+ * @param line
+ */
+function busHour(line) {
     var route = BusSchedules_1.getBusRouteForInput(line); // get BusRoute associated with line
-    if (!route) {
-        return ("Whoops! I don't track that route. I track the following routes: " +
-            BusSchedules_1.getBusRouteNames().join("--> ") + ".\n" + printHelp(false));
+    if (routeExist(line)) // path exist
+     {
+        var i = void 0;
+        var dayInWeek = "";
+        var days = BusSchedules_1.getOperationDay(route);
+        for (i = 0; i < days.length; i++) {
+            dayInWeek = dayInWeek + nameOfDay(days[i]) + ", ";
+        }
+        console.log(dayInWeek);
+        // @ts-ignore
+        return "The route " + line + " operates every " + dayInWeek +
+            "from " + BusSchedules_1.getOperationHour(route)[0] + " to " + BusSchedules_1.getOperationHour(route)[1] + ".";
     }
-    else {
-        // const items:object[] = Object.values(route);	// get the values of array of key value pair array
-        return ("The route " + Object.keys(route) + " goes through the following stops: \n" + BusSchedules_1.getStopsFromBusRoute(route).join("-->") + ".");
+    else
+        return dontTrackThatRoute();
+}
+function stopHour(stop) {
+    var i; //loops
+    var j; // inner loop
+    var answer = "Buses go to stop " + stop + " every "; // to return
+    var routes = routesToStop(stop); //array of String route name
+    if (!routes) // undefined?
+     {
+        return "No routes goes through stop " + stop + ".";
     }
+    for (i = 0; i < routes.length; i++) // loop through all routes that go through the stop
+     {
+        var stops = BusSchedules_1.getStopsFromBusRoute(BusSchedules_1.getBusRouteForInput(routes[i]));
+        for (j = 0; j < stops.length; i++) // loop through each stop of that route, string
+         {
+            if (stops[j].toLowerCase() === stop.toLowerCase()) // stop matched
+             {
+                // @ts-ignore
+                var time = Object.values(Object.values(BusSchedules_1.getBusRouteForInput(routes[i]))[2])[j];
+                answer = answer.concat(time.join(", "));
+            }
+        }
+        answer = answer.concat(" minutes every hour from " + BusSchedules_1.getOperationHour(BusSchedules_1.getBusRouteForInput(routes[i]))[0] +
+            " to " + BusSchedules_1.getOperationHour(BusSchedules_1.getBusRouteForInput(routes[i]))[1]);
+    }
+    return answer;
 }
 /**
  * list all commands or tell how to do so
@@ -201,36 +335,76 @@ function printHelp(switcher) {
                     description: "check shuttle",
                     usage: "!shuttle route City Commuter",
                     handler: function (msg, res) { return __awaiter(void 0, void 0, void 0, function () {
-                        var params, location, route;
+                        var params, wordsToReturn, location_1;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
                                     params = msg.getParameters();
-                                    location = params.join(" ");
+                                    // const location: string = params.join(" ");
                                     console.log(params);
-                                    route = BusSchedules_1.getBusRouteForInput(location);
-                                    if (!!route) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, res.send("Whoops! I don't track that route. I track the following routes: " +
-                                            BusSchedules_1.getBusRouteNames().join(", ") + ".")];
+                                    if (!(params.length > 1)) return [3 /*break*/, 12];
+                                    if (!(typeof params[0] === "string")) return [3 /*break*/, 9];
+                                    wordsToReturn = "what now?";
+                                    location_1 = params.slice(1, params.length).join(" ");
+                                    console.log("location is: " + location_1);
+                                    if (!(params[0] === "route")) return [3 /*break*/, 1];
+                                    console.log("I read route.");
+                                    wordsToReturn = getStops(location_1);
+                                    return [3 /*break*/, 7];
                                 case 1:
-                                    _a.sent();
-                                    return [4 /*yield*/, res.send(printHelp(false))];
-                                case 2: return [2 /*return*/, _a.sent()];
-                                case 3: 
-                                // const items:object[] = Object.values(route);	// get the values of array of key value pair array
-                                return [4 /*yield*/, res.send("The route goes through the following stops: \n" + BusSchedules_1.getStopsFromBusRoute(route).join("-->") + ".")];
+                                    if (!(params[0] === "stop")) return [3 /*break*/, 2];
+                                    console.log("I read stop.");
+                                    wordsToReturn = routeFromStop(location_1);
+                                    return [3 /*break*/, 7];
+                                case 2:
+                                    if (!(params[0] === "hour")) return [3 /*break*/, 3];
+                                    console.log("I read hour.");
+                                    wordsToReturn = busHour(location_1);
+                                    return [3 /*break*/, 7];
+                                case 3:
+                                    if (!(params[0] === "time")) return [3 /*break*/, 4];
+                                    console.log("I read time.");
+                                    wordsToReturn = stopHour(location_1);
+                                    return [3 /*break*/, 7];
                                 case 4:
-                                    // const items:object[] = Object.values(route);	// get the values of array of key value pair array
+                                    if (!(params[0] === "help")) return [3 /*break*/, 6];
+                                    console.log("I read help.");
+                                    return [4 /*yield*/, res.send(printHelp(true))];
+                                case 5: return [2 /*return*/, _a.sent()];
+                                case 6:
+                                    wordsToReturn = "Whoops! Sorry not sure I can help that " + printHelp(false);
+                                    _a.label = 7;
+                                case 7: return [4 /*yield*/, res.send(wordsToReturn)];
+                                case 8:
                                     _a.sent();
-                                    _a.label = 5;
-                                case 5:
-                                    if (!(typeof params[0] === "string")) return [3 /*break*/, 6];
-                                    return [3 /*break*/, 8];
-                                case 6: return [4 /*yield*/, res.send("Please don't use number as command. The available form of commands are as follow:\n")];
-                                case 7:
+                                    return [3 /*break*/, 11];
+                                case 9: return [4 /*yield*/, res.send("Please only use string as command. " + printHelp(false))];
+                                case 10:
                                     _a.sent();
-                                    _a.label = 8;
-                                case 8: return [2 /*return*/];
+                                    _a.label = 11;
+                                case 11: return [3 /*break*/, 14];
+                                case 12: // not enough command arguments
+                                return [4 /*yield*/, res.send("Whoops! Sorry not sure I can help that " + printHelp(true))
+                                    // if(input.length>0)	// input contains actual command
+                                    // {
+                                    // 	if(typeof input[0]==="string")	// make sure that commands are string instead of number
+                                    // 	{
+                                    // 		if(input[0]==="route")		// check for route of certain line
+                                    // 		{
+                                    //
+                                    // 		} else
+                                    // 			if(input[0])
+                                    // 	}
+                                    // 	if(input[0]==="route")
+                                    // 	{
+                                    //
+                                    // 	}
+                                    // }
+                                ];
+                                case 13:
+                                    _a.sent();
+                                    _a.label = 14;
+                                case 14: return [2 /*return*/];
                             }
                         });
                     }); }
