@@ -6,25 +6,50 @@ export interface BusRoute {
 	};
 }
 
-export type BusRouteNames = "husky-campus-daily" | "husky-campus-nightly" | "city-commuter" | "daniel-heights" | "shopping-weekdays" | "shopping-saturday";
+
+export type BusRouteNames =
+	"husky-campus-daily"
+	| "husky-campus-nightly"
+	| "city-commuter"
+	| "daniel-heights"
+	| "shopping-weekdays"
+	| "shopping-saturday";
 
 export type BusRoutes = { [key in BusRouteNames]: BusRoute; };
 
+export function getReadableTime(time: number): string {
+
+	let timeAsString: string = time + "";
+	if (timeAsString.length === 3) timeAsString = "0" + timeAsString;
+
+	const hourAsString: string = timeAsString.substr(0, 2);
+	const minuteAsString: string = timeAsString.substr(2, 2);
+
+	const hours: number = parseInt(hourAsString);
+	const minutes: number = parseInt(minuteAsString);
+
+	if (Number.isNaN(hours) || Number.isNaN(minutes)) return "" + time;
+
+	const date: Date = new Date(2016, 11, 17, hours, minutes, 0, 0);
+
+	return date.toLocaleTimeString().replace(RegExp(":00", "g"), "");
+}
+
 export const possibleNamesForRoute: { [possibleInput: string]: BusRouteNames } = {
 	"husky-campus-day": "husky-campus-daily",
-	"husky-campus-during-day":	"husky-campus-daily",
-	"campus-daily": 	"husky-campus-daily",
-	"campus-day": 		"husky-campus-daily",
-	"husky-campus-night": 		"husky-campus-nightly",
-	"husky-campus-during-night":"husky-campus-nightly",
-	"campus-nightly": 	"husky-campus-nightly",
-	"campus-night": 	"husky-campus-nightly",
-	"city-commuter":	"city-commuter",
-	"city":				"city-commuter",
-	"daniel-heights":	"daniel-heights",
-	"shopping-weekdays":"shopping-weekdays",
-	"shopping":			"shopping-weekdays",
-	"shopping-saturday":"shopping-saturday"
+	"husky-campus-during-day": "husky-campus-daily",
+	"campus-daily": "husky-campus-daily",
+	"campus-day": "husky-campus-daily",
+	"husky-campus-night": "husky-campus-nightly",
+	"husky-campus-during-night": "husky-campus-nightly",
+	"campus-nightly": "husky-campus-nightly",
+	"campus-night": "husky-campus-nightly",
+	"city-commuter": "city-commuter",
+	"city": "city-commuter",
+	"daniel-heights": "daniel-heights",
+	"shopping-weekdays": "shopping-weekdays",
+	"shopping": "shopping-weekdays",
+	"shopping-saturday": "shopping-saturday"
 
 
 
@@ -33,6 +58,22 @@ export const possibleNamesForRoute: { [possibleInput: string]: BusRouteNames } =
 	// make sure to make them lower case and use "-" instead of space so the parser can find them.
 
 };
+
+const names: BusRouteNames[] = [
+	"husky-campus-daily",
+	"husky-campus-nightly",
+	"city-commuter",
+	"daniel-heights",
+	"shopping-weekdays",
+	"shopping-saturday"
+	// put the rest in here
+];
+
+export function loopRouteName(): string[] {
+	return names.map((name: string): string => {
+		return name.replace(RegExp("-", "g"), " ");
+	});
+}
 
 /**
  * Get the route names.
@@ -53,17 +94,17 @@ export function getBusRouteNames(): string[] {
  * @param switcher	key or value
  * @param switcher2	which item
  */
-function getRouteInfo(route: BusRoute | undefined, switcher: boolean, switcher2: number)
-{
+function getRouteInfo(route: BusRoute | undefined, switcher: boolean, switcher2: number): string[] | number[] {
 	// @ts-ignore
-	const items:object[] = Object.values(route);	// get value of BusRoute
+	const items: object[] = Object.values(route);	// get value of BusRoute
 
-	if(switcher)	// true is key
+	if (switcher)	// true is key
 	{
 		return Object.keys(items[switcher2]);
 	}
 	return Object.values(items[switcher2]);
 }
+
 // /**
 //  * Get value of BusRoute objects: Day, time, and stops
 //  * @param input BusRoute key-value pair
@@ -77,8 +118,7 @@ function getRouteInfo(route: BusRoute | undefined, switcher: boolean, switcher2:
  * Get day of operation in number array
  * @param input
  */
-export function getOperationDay(input: BusRoute | undefined): number[]
-{
+export function getOperationDay(input: BusRoute | undefined): string[] | number[] {
 	// const items:object[] = Object.values(input);	// get values of object array BusRoute
 	//
 	// return Object.values(items[0]);
@@ -89,9 +129,8 @@ export function getOperationDay(input: BusRoute | undefined): number[]
  * Get hour of operation in number array
  * @param input
  */
-export function getOperationHour(input: BusRoute | undefined): number[]
-{
-	return getRouteInfo(input,false,1);
+export function getOperationHour(input: BusRoute | undefined): number[] {
+	return getRouteInfo(input, false, 1) as number[];
 }
 
 /**
@@ -99,14 +138,17 @@ export function getOperationHour(input: BusRoute | undefined): number[]
  * must make sure input is actually BusRoute object rather than undefined ( AKA don't exist)
  * @param input BusRoute object
  */
-export function getStopsFromBusRoute(input: BusRoute | undefined): string[]
-{
+export function getStopsFromBusRoute(input: BusRoute | undefined): string[] | number[] {
 	// const items:object[] = Object.values(input);	// get the values of object array BusRoute
 	//
 	// return Object.keys(items[2]);					// return array of stop names
 	return getRouteInfo(input, true, 2);
 }
 
+export function getTimeForStops(input: BusRoute | undefined): number[]
+{
+	return getRouteInfo(input, false, 2) as number[];
+}
 export function getBusRouteForInput(input: string): BusRoute | undefined {
 
 	input = input.replace(RegExp(" ", "g"), "-");
@@ -126,22 +168,21 @@ export function getBusRouteForInput(input: string): BusRoute | undefined {
  * @param route	BUsRoute
  * @param stop	string name of stop
  */
-export function containStop(route: BusRoute | undefined, stop: string):boolean
-{
-	const stops = getStopsFromBusRoute(route);
+export function containStop(route: BusRoute | undefined, stop: string): boolean {
+	const stops: string[] | number[] = getStopsFromBusRoute(route);
 	let i: number;
 
-	for(i=0;i<stops.length;i++)
-	{
+	for (i = 0; i < stops.length; i++) {
 		// console.log("stops[i]= "+stops[i].toLowerCase()+ " stop= "+stop.toLowerCase());
-		if(stops[i].toLowerCase()===stop.toLowerCase())
-		{
+		// @ts-ignore
+		if (stops[i].toLowerCase() === stop.toLowerCase()) {
 			// console.log("true");
 			return true;
 		}
 	}
 	return false;
 }
+
 export const busRoutes: BusRoutes = {
 	"husky-campus-daily": {
 		days: [1, 2, 3, 4, 5],
