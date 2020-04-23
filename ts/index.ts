@@ -133,7 +133,7 @@ function nameOfDay(input: number): string
 function dontTrackThatRoute(): string
 {
 	return "Whoops! I don't track that route. I track the following routes: " +
-		getBusRouteNames().join("--> ") + ".\n" + printHelp(false);
+		loopRouteName().join("--> ") + ".\n" + printHelp(false);
 }
 function routeExist(line: string): boolean
 {
