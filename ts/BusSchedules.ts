@@ -21,7 +21,7 @@ export const possibleNamesForRoute: { [possibleInput: string]: BusRouteNames } =
 	"campus-night": "husky-campus-nightly",
 
 	// add more here where the left hand side is something someone could type in
-	// and the right and side is one of the types from "BusRouteNames".
+	// and the right hand side is one of the types from "BusRouteNames".
 	// make sure to make them lower case and use "-" instead of space so the parser can find them.
 
 };
@@ -39,6 +39,66 @@ export function getBusRouteNames(): string[] {
 
 }
 
+/**
+ * Helper method to specified information from BusRoute
+ * @param route	BusRoute key-value pair
+ * @param switcher	key or value
+ * @param switcher2	which item
+ */
+function getRouteInfo(route: BusRoute | undefined, switcher: boolean, switcher2: number)
+{
+	// @ts-ignore
+	const items:object[] = Object.values(route);	// get value of BusRoute
+
+	if(switcher)	// true is key
+	{
+		return Object.keys(items[switcher2]);
+	}
+	return Object.values(items[switcher2]);
+}
+// /**
+//  * Get value of BusRoute objects: Day, time, and stops
+//  * @param input BusRoute key-value pair
+//  */
+// export function getBusRouteValues(input: BusRoute): object[]
+// {
+// 	return Object.values(input);
+// }
+
+/**
+ * Get day of operation in number array
+ * @param input
+ */
+export function getOperationDay(input: BusRoute | undefined): number[]
+{
+	// const items:object[] = Object.values(input);	// get values of object array BusRoute
+	//
+	// return Object.values(items[0]);
+	return getRouteInfo(input, false, 0);
+}
+
+/**
+ * Get hour of operation in number array
+ * @param input
+ */
+export function getOperationHour(input: BusRoute | undefined): number[]
+{
+	return getRouteInfo(input,false,1);
+}
+
+/**
+ * get string array of stops
+ * must make sure input is actually BusRoute object rather than undefined ( AKA don't exist)
+ * @param input BusRoute object
+ */
+export function getStopsFromBusRoute(input: BusRoute | undefined): string[]
+{
+	// const items:object[] = Object.values(input);	// get the values of object array BusRoute
+	//
+	// return Object.keys(items[2]);					// return array of stop names
+	return getRouteInfo(input, true, 2);
+}
+
 export function getBusRouteForInput(input: string): BusRoute | undefined {
 
 	input = input.replace(RegExp(" ", "g"), "-");
@@ -53,6 +113,25 @@ export function getBusRouteForInput(input: string): BusRoute | undefined {
 
 }
 
+/**
+ * return if the route contains said stop
+ * @param route	BUsRoute
+ * @param stop	string name of stop
+ */
+export function containStop(route: BusRoute | undefined, stop: string):boolean
+{
+	const stops = getStopsFromBusRoute(route);
+	let i: number;
+
+	for(i=0;i<stops.length;i++)
+	{
+		if(stops[i]===stop)
+		{
+			return true;
+		}
+	}
+	return false;
+}
 export const busRoutes: BusRoutes = {
 	"husky-campus-daily": {
 		days: [1, 2, 3, 4, 5],

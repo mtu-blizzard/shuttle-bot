@@ -3,8 +3,11 @@
  * zongd@mtu.edu
  */
 
-import {BusRoute, getBusRouteForInput, getBusRouteNames} from "./BusSchedules";
+import {BusRoute, getBusRouteForInput, getBusRouteNames, getOperationDay, getOperationHour, getStopsFromBusRoute,containStop} from "./BusSchedules";
 import {KBBot, KBResponse, KBMessage} from "@elijahjcobb/keybase-bot-builder";
+import {stringify} from "querystring";
+import * as Path from "path";
+import * as FS from "fs";
 
 // //  Husky Campus Shuttle Daily
 // const yellow: string[] = [
@@ -112,34 +115,270 @@ import {KBBot, KBResponse, KBMessage} from "@elijahjcobb/keybase-bot-builder";
 // 	return output;
 // }
 
+function nameOfDay(input:number): string
+{
+	switch(input)
+	{
+		case 1: {return "Monday";}
+		case 2: {return "Tuesday";}
+		case 3: {return "Wednesday";}
+		case 4: {return "Thursday";}
+		case 5: {return "Friday";}
+		case 6: {return "Saturday";}
+		case 7: {return "Sunday";}
+		default:{return "everyday";}
 
-(async (): Promise<void> => {
+	}
+}
+function dontTrackThatRoute(): string
+{
+	return "Whoops! I don't track that route. I track the following routes: " +
+		getBusRouteNames().join("--> ") + ".\n"+printHelp(false)
+}
+function routeExist(line:string):boolean
+{
+	const route: BusRoute | undefined = getBusRouteForInput(line);	//get BusRoute associated with line
+	if(!route)
+	{
+		return false;	// no route
+	} else
+		return true;
 
-		const bot: KBBot = await KBBot.init("blizzard_t_husky", "./blizzard_paper_key.txt",
+}
+/**
+ * return route of the line
+ * @param line
+ */
+function getStops(line:string): string
+{
+	const route: BusRoute | undefined = getBusRouteForInput(line);	// get BusRoute associated with line
+
+	if(routeExist(line))
+	{
+		// @ts-ignore
+		return ("The route "+Object.keys(route)+" goes through the following stops: \n"+getStopsFromBusRoute(route).join("-->")+ ".");
+	} else
+		return dontTrackThatRoute();
+}
+
+/**
+ * array of BusRoute containing the specified stop
+ * @param stop
+ */
+function routesToStop(stop:string): BusRoute[] | undefined
+{
+	let i: number;
+	let answer:BusRoute[] = [];
+	let routes = getBusRouteNames();	// string of route names
+
+	for(i = 0; i< routes.length; i++)
+	{
+		if(containStop(getBusRouteForInput(routes[i]),stop))
+		{
+			// @ts-ignore
+			answer.concat([getBusRouteForInput(routes[i])]);
+		}
+	}
+	console.log("array of BusRoute for routeToStop:"+answer);
+
+	if(answer===[])
+		return undefined;
+	else
+		return answer;
+}
+/**
+ * checks to see which routes stop by the stop
+ * @param stop
+ */
+function routeFromStop(stop:string): string
+{
+	// let i: number;
+	// let answer:string =" ";
+	// let routes = getBusRouteNames();
+	// for(i=0;i<routes.length;i++)
+	// {
+	// 	if(containStop(getBusRouteForInput(routes[i]),stop))	// if route contains the stop
+	// 	{
+	// 		answer.concat(routes[i]+", ");
+	// 	}
+	// }
+	let answer:string | undefined;
+	answer = routesToStop(stop)?.join(", ");
+	console.log("routeFromStop "+answer);
+	if(!answer)	// no match, undefined
+	{
+		return "No routes passes through stop " + stop +"\n"+printHelp(false);
+	} else
+		return "The following route(s) pass through stop " + stop +":\n"+ answer;
+}
+
+/**
+ * return operation days in a week and time duration
+ * @param line
+ */
+function busHour(line:string): string
+{
+	const route: BusRoute | undefined = getBusRouteForInput(line);	// get BusRoute associated with line
+
+	if(routeExist(line))	// path exist
+	{
+		let i:number;
+		let dayInWeek:string = "";
+		let days:number[] = getOperationDay(route);
+		for(i=0; i<days.length; i++)
+		{
+			dayInWeek = dayInWeek+nameOfDay(days[i])+", ";
+		}
+		// @ts-ignore
+		return "The route " + Object.keys(route) + " operates every " + dayInWeek +
+			"from " + getOperationHour(route)[0] + " to " + getOperationHour(route)[1]+".";
+	} else
+		return dontTrackThatRoute();
+}
+
+function stopHour(stop:string): string
+{
+	let i:number;	//loops
+	let j:number;	// inner loop
+	let answer = "";	// to return
+	let routes = routesToStop(stop);	//array of BusRoute
+
+	if(!routes) 	// undefined?
+	{
+		return "No routes goes through stop "+ stop + ".";
+	}
+
+	for(i=0;i<routes.length; i++) // loop
+	{
+		let stops = Object.keys(Object.values(routes[i])[2]);
+		stops = getStopsFromBusRoute(routes[i]);
+		for(j=0; j<stops.length; i++)
+		{
+			if(stops[j]===stop)	// stop matched
+		}
+	}
+	return answer;
+}
+/**
+ * list all commands or tell how to do so
+ * @param switcher
+ */
+function printHelp(switcher:boolean):string
+{
+	let words: string;
+	if(switcher)
+	{
+		words = "Here are a list of available commands for shuttle schedule:\n" +
+			"\"!shuttle route *_name of route_*\" : list all stops of this shuttle line\n" +
+			"\"!shuttle stop *_name of stop_*\" : list Route(s) going through said stop\n" +
+			"\"!shuttle hour *_name of route_*\" : hour of operation for said Route\n" +
+			"\"!shuttle time *_name of stop_*\" : time of day each shuttle line goes through said stop";
+	} else
+		words ="For a list of available commands for shuttle schedule related function:\n" +
+			"Please use the following command: *!shuttle help*"
+	return words;
+}
+(async (): Promise<void> =>
+	{
+
+		// const bot: KBBot = await KBBot.init("blizzard_t_husky", "./blizzard_paper_key",
+		// 	{
+		// 		logging: true,
+		// 		debugging: true,
+		// 		hostname: "bot-blizzard-ZD"
+		// 	}
+		// );
+		const paperKeyPath: string = Path.resolve("blizzard_paper_key.txt");    // using paper key: "stage pisto..."
+		const paperKeyData: Buffer = FS.readFileSync(paperKeyPath);
+		const paperKey: string = paperKeyData.toString("utf8");
+		const bot: KBBot = await KBBot.init("blizzard_t_husky", paperKey,
 			{
 				logging: true,
 				debugging: true,
 				hostname: "bot-blizzard-ZD"
 			}
-		);
+		)
+
 
 		bot.command(
 			{
 				name: "shuttle",
 				description: "check shuttle",
-				usage: "!shuttle City Commuter",
-				handler: async (msg: KBMessage, res: KBResponse): Promise<void> => {
+				usage: "!shuttle route City Commuter",
+				handler: async (msg: KBMessage, res: KBResponse): Promise<void> =>
+				{
 
 					const params: (string | number)[] = msg.getParameters();
-					const location: string = params.join(" ");
-					const route: BusRoute | undefined = getBusRouteForInput(location);
+					// const location: string = params.join(" ");
+					console.log(params);
+					// const route: BusRoute | undefined = getBusRouteForInput(location);
+					//
+					// if (!route) {
+					// 	await res.send("Whoops! I don't track that route. I track the following routes: " +
+					// 		getBusRouteNames().join(", ") + ".");
+					// 	return await res.send(printHelp(false));
+					//
+					// } else
+					// {
+					// 	// const items:object[] = Object.values(route);	// get the values of array of key value pair array
+					// 	await res.send("The route goes through the following stops: \n"+getStopsFromBusRoute(route).join("-->")+ ".");
+					// }
 
-					if (!route) {
-						return await res.send("Whoops! I don't track that route. I track the following routes: " +
-							getBusRouteNames().join(", ") + ".");
-					}
+					if(params.length>1)		// check valid length of command
+					{
+						if(typeof params[0]==="string")		//check string command
+						{
+							let wordsToReturn:string = "what now?";
+							let location = params.slice(1,params.length-1).join(" ");
+							console.log("location is: "+location);
+							params[0] = params.toString().toLowerCase();
+							if(params[0] ==="route")
+							{
+								wordsToReturn = getStops(location);
+							}else
+							if(params[0] === "stop")
+							{
+								wordsToReturn = routeFromStop(location);
+							}else
+							if (params[0] === "hour")
+							{
+								wordsToReturn = busHour(location);
+							} else
+							if(params[0] === "time")
+							{
 
-					await res.send(`${route}`);
+							}else
+							if(params[0] === "help")
+							{
+								await res.send(printHelp(true));
+							} else
+								wordsToReturn = "Whoops! Sorry not sure I can help that "+printHelp(false);
+
+							await res.send(wordsToReturn);
+						}else
+						{
+							await res.send("Please only use string as command. "+printHelp(false));
+						}
+					} else	// not enough command arguments
+						await res.send("Whoops! Sorry not sure I can help that "+printHelp(true))
+
+
+
+					// if(input.length>0)	// input contains actual command
+					// {
+					// 	if(typeof input[0]==="string")	// make sure that commands are string instead of number
+					// 	{
+					// 		if(input[0]==="route")		// check for route of certain line
+					// 		{
+					//
+					// 		} else
+					// 			if(input[0])
+					// 	}
+					// 	if(input[0]==="route")
+					// 	{
+					//
+					// 	}
+					// }
 
 				}
 			}
