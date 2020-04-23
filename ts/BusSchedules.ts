@@ -6,12 +6,55 @@ export interface BusRoute {
 	};
 }
 
-export interface BusRoutes {
-	[key: string]: BusRoute;
+export type BusRouteNames = "husky-campus-daily" | "husky-campus-nightly" | "city-commuter" | "daniel-heights" | "shopping-weekdays" | "shopping-saturday";
+
+export type BusRoutes = { [key in BusRouteNames]: BusRoute; };
+
+export const possibleNamesForRoute: { [possibleInput: string]: BusRouteNames } = {
+	"husky-campus-day": "husky-campus-daily",
+	"husky-campus-during-day": "husky-campus-daily",
+	"campus-daily": "husky-campus-daily",
+	"campus-day": "husky-campus-daily",
+	"husky-campus-night": "husky-campus-nightly",
+	"husky-campus-during-night": "husky-campus-nightly",
+	"campus-nightly": "husky-campus-nightly",
+	"campus-night": "husky-campus-nightly",
+
+	// add more here where the left hand side is something someone could type in
+	// and the right and side is one of the types from "BusRouteNames".
+	// make sure to make them lower case and use "-" instead of space so the parser can find them.
+
+};
+
+/**
+ * Get the route names.
+ */
+export function getBusRouteNames(): string[] {
+
+	return Object.keys(possibleNamesForRoute).map((key: string): string => {
+
+		return key.replace(RegExp("-", "g"), " ");
+
+	});
+
+}
+
+export function getBusRouteForInput(input: string): BusRoute | undefined {
+
+	input = input.replace(RegExp(" ", "g"), "-");
+	input = input.toLowerCase();
+
+	if (busRoutes.hasOwnProperty(input)) return busRoutes[(input as BusRouteNames)];
+
+	const possibleName: BusRouteNames | undefined = possibleNamesForRoute[input];
+	if (possibleName) return busRoutes[possibleName];
+
+	return undefined;
+
 }
 
 export const busRoutes: BusRoutes = {
-	"Husky Campus Daily": {
+	"husky-campus-daily": {
 		days: [1, 2, 3, 4, 5],
 		hours: [730, 1745],
 		routes: {
@@ -25,7 +68,7 @@ export const busRoutes: BusRoutes = {
 			"Library": [24, 44, 4],
 		}
 	},
-	"Husky Campus Nightly": {
+	"husky-campus-nightly": {
 		days: [1, 2, 3, 4, 5],
 		hours: [1830, 2125],
 		routes: {
@@ -37,7 +80,7 @@ export const busRoutes: BusRoutes = {
 			"Library": [24, 44, 4],
 		}
 	},
-	"City Coummuter": {
+	"city-commuter": {
 		days: [1, 2, 3, 4, 5],
 		hours: [705, 1730],
 		routes: {
@@ -57,7 +100,7 @@ export const busRoutes: BusRoutes = {
 			"Houghton Ave & Emerald Street": [27, 57]
 		}
 	},
-	"Daninell Heights": {
+	"daniel-heights": {
 		days: [1, 2, 3, 4, 5],
 		hours: [720, 1800],
 		routes: {
@@ -68,7 +111,7 @@ export const busRoutes: BusRoutes = {
 			"Library": [17, 37, 57]
 		}
 	},
-	"Shopping Weekdays": {
+	"shopping-weekdays": {
 		days: [3, 4, 5],
 		hours: [1815, 2130],
 		routes: {
@@ -81,8 +124,7 @@ export const busRoutes: BusRoutes = {
 			"WalMart": [50, 135, 220, 305]
 		}
 	},
-
-	"Shopping Saturday": {
+	"shopping-saturday": {
 		days: [6],
 		hours: [1200, 1645],
 		routes: {
